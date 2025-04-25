@@ -1,46 +1,52 @@
-# Diverse Gradient Method
- 
-This repository contains the code for "Improving the Transferability of Adversarial Examples with Diverse Gradients".
 
-## Method
 
-We propose a Diverse Gradient Method (DGM) to craft transferable adversarial examples.
+
 ## Environment
 
 This code is implemented in PyTorch, and we have tested the code under the following environment settings:
 
-- python = 3.6.2
-- torch = 1.5.0
-- torchvision = 0.6.0
+- python = 3.7.6
+- torch = 1.7.1
+- torchvision = 0.8.2
 - advertorch = 0.2.3
 - pretrainedmodels = 0.7.4
 
 Additionally, we reproduced DI, TI, MI and PI in Pytorch in *attack_method.py*.
+
 ## Run the code
 
-1. Download the dataset from [Dataset](https://drive.google.com/file/d/1PqpPTCIvzRRfbOhiGgQP72MXo43cw8nr/view?usp=sharing) and extract images to the path `./SubImageNetVal/`  
+1. Download the dataset from [Dataset](https://drive.google.com/file/d/1PqpPTCIvzRRfbOhiGgQP72MXo43cw8nr/view?usp=sharing)
 
-
-2. Training derived model by knowledge distillation, diverse gradient information, For ResNet-152 as the source model,
+2. Train the model to generate a perturbed dataset, For ResNet-152 as the source model,
     ```bash
-    python train_kd.py --save_root './result' --img_root './SubImageNetVal/' --T 20 --note 'T20_resnet152' --arch 'resnet152' 
+    python train_kd.py --save_root './datamodel' --img_s './SubImageNetVal/' --T 20 --note 'T20_resnet152' --arch 'resnet152' 
     ```
-   Or you can directly download our trained weight files form [derived model weight files](https://drive.google.com/file/d/1hHYUwQw9POYczCRLXURyNtcXT4qrac2u/view?usp=sharing)  
+   
 
     
-3. Generate adversarial examples and save them into path `./adv_path/`. For ResNet-152 as the source model,
+3. Generate perturbation dataset and save them into path `./epsdata/`. For ResNet-152 as the source model,
     ```bash
-    python attack_distillation.py --input_dir './SubImageNetVal/' --output_dir './adv_path/' --attack_method 'pgd' --ensemble 1 --snet_dir './result/T20_resnet152/checkpoint.pth.tar'
+    python get_epsdata.py --input_dir './SubImageNetVal/' --output_dir './epsdata/' --attack_method 'fgsm' --epsilon=18 --ensemble 0 --snet_dir './datamodel/T20_resnet152/checkpoint.pth.tar'
     ```
    --snet_dir is the weight file path, you can directily download or training by step 2.  
 
-
-4. Evaluate the transferability of generated adversarial examples in `./adv_path/`. 
+4. Train the final model, For ResNet-152 as the source model,
     ```bash
-    AdvPath="/data/xfl2/adv_sp_res50_pgd/" bash evaluate.sh
-    AdvPath="./adv_30/" bash evaluate.sh
+    python train_kd.py --save_root './result' --img_s './epsdata/' --T 20 --note 'T20_resnet152' --arch 'resnet152' 
     ```
-python attack_distillation at.py --input_dir './dataset/SubImageNetVal/' --output_dir './resultruanying/' --attack_method 'pgd' --snet_dir './atfgsm/'checkpoint.pth.tar'
+
+5. Generate adversarial samples
+    ```bash
+    python get_adv.py --input_dir './SubImageNetVal/' --output_dir './adv/' --attack_method 'pgd' --epsilon=16 --ensemble 1 --snet_dir1 './result/T20_T20_resnet152/checkpoint.pth.tar'
+    ```
+    Set different T values in the second step for the third and fourth steps to obtain an additional seven models
+
+4. Evaluate the transferability of generated adversarial examples in `./adv/`. 
+    ```bash
+    AdvPath="./adv/" bash evaluate.sh
+    
+    ```
+
 
 #### Pretrained models
 
